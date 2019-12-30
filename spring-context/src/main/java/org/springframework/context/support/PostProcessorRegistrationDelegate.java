@@ -63,14 +63,21 @@ final class PostProcessorRegistrationDelegate {
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
+			// todo 自定义的 BeanFactoryPostProcessor OK BeanDefinitionRegistryPostProcessor OK
+			// todo 配置里的 BeanFactoryPostProcessor OK BeanDefinitionRegistryPostProcessor OK
+
+			// todo 此处的beanFactory后置处理器是硬编码添加的，不需要排序
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
 							(BeanDefinitionRegistryPostProcessor) postProcessor;
+					// todo 调用自定义的BeanDefinitionRegistryPostProcessor的方法
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
+					// todo 收集自定义的BeanFactoryPostProcessor
 					registryProcessors.add(registryProcessor);
 				}
 				else {
+					// todo 收集自定义的BeanFactoryPostProcessor（不是BeanFactoryPostProcessor的子类的）
 					regularPostProcessors.add(postProcessor);
 				}
 			}
@@ -81,6 +88,7 @@ final class PostProcessorRegistrationDelegate {
 			// PriorityOrdered, Ordered, and the rest.
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
+			// todo 获取配置中的BeanDefinitionRegistryPostProcessor，并按优先级分类
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
@@ -91,7 +99,9 @@ final class PostProcessorRegistrationDelegate {
 				}
 			}
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
+			// todo 收集配置里的BeanFactoryPostProcessor，以下同
 			registryProcessors.addAll(currentRegistryProcessors);
+			// todo 调用配置里的BeanDefinitionRegistryPostProcessor的方法，以下同
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
@@ -127,6 +137,7 @@ final class PostProcessorRegistrationDelegate {
 			}
 
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.
+			// todo 调用所有的BeanFactoryPostProcessor（包含自定义和配置里的）
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
@@ -138,6 +149,7 @@ final class PostProcessorRegistrationDelegate {
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
+		// todo 这部分是获取配置中没有额外方法的BeanFactoryPostProcessor（不是BeanDefinitionRegistryPostProcessor）
 		String[] postProcessorNames =
 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
 
@@ -202,6 +214,7 @@ final class PostProcessorRegistrationDelegate {
 		List<BeanPostProcessor> internalPostProcessors = new ArrayList<>();
 		List<String> orderedPostProcessorNames = new ArrayList<>();
 		List<String> nonOrderedPostProcessorNames = new ArrayList<>();
+
 		for (String ppName : postProcessorNames) {
 			if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
 				BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
