@@ -150,8 +150,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFactory) {
 		Assert.notNull(singletonFactory, "Singleton factory must not be null");
 		synchronized (this.singletonObjects) {
+			// todo 一级缓存中没有实例
 			if (!this.singletonObjects.containsKey(beanName)) {
+				// todo 放入三级缓存
 				this.singletonFactories.put(beanName, singletonFactory);
+				// todo 清理二级缓存
 				this.earlySingletonObjects.remove(beanName);
 				this.registeredSingletons.add(beanName);
 			}
@@ -174,15 +177,22 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	@Nullable
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+		// todo 例：A->B B->A，A先创建，然后发现依赖B，A已经在三级缓存了，现在创建B，B来取A
+		// todo 一级缓存第一次肯定拿不到，因为依赖的对象也还在创建中
 		Object singletonObject = this.singletonObjects.get(beanName);
-		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {// todo 两个条件都成立，继续加锁处理
 			synchronized (this.singletonObjects) {
+				// todo 现在二级缓存也拿不到
 				singletonObject = this.earlySingletonObjects.get(beanName);
 				if (singletonObject == null && allowEarlyReference) {
+					// todo 这里的singleFactory返回的是提前暴露的引用的factory
 					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 					if (singletonFactory != null) {
+						// todo 拿到A的引用了
 						singletonObject = singletonFactory.getObject();
+						// todo 把A放入二级缓存
 						this.earlySingletonObjects.put(beanName, singletonObject);
+						// todo 删除A的三级缓存，没有放入一级缓存是因为A还未初始化完全，还在等待B
 						this.singletonFactories.remove(beanName);
 					}
 				}
